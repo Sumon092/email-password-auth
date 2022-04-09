@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import './App.css';
 import app from './firebase.init';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -11,13 +11,18 @@ function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validated, setValidated] = useState(false);
-  const [error, setError] = useState(true)
+  const [error, setError] = useState(false)
+  const [register, setRegister] = useState(false);
   const handleEmailBlur = (event) => {
     setEmail(event.target.value);
   }
 
   const handlePasswordBlur = (event) => {
     setPassword(event.target.value);
+  }
+
+  const handleRegisterChange = (event) => {
+    setRegister(event.target.checked)
   }
 
   const handleFormSubmit = (event) => {
@@ -30,26 +35,40 @@ function App() {
     }
     if (!/(?=.*[#?!@$%^&*-])/.test(password)) {
       setError('Password should contain at least one special character');
-      return //error thakle return
+      return;//error thakle return
     }
 
     setValidated(true);
     setError('');//error na thakle 
+    if (register) {
+      signInWithEmailAndPassword(auth, email, password)
+        .then(result => {
+          const user = result.user;
+          console.log(user);
+        })
+        .catch(error => {
+          console.error(error);
+          setError(error.message)
+        })
+    }
+    else {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(result => {
+          const user = result.user;
+          console.log(user);
+        })
+        .catch(error => {
+          console.error(error)
+          setError(error.message)
+        })
+    }
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(result => {
-        const user = result.user;
-        console.log(user);
-      })
-      .catch(error => {
-        console.error(error)
-      })
     event.preventDefault();
   }
   return (
     <div>
       <div className="register mt-2 w-50 mx-auto">
-        <h2 className="text-primary">Please Register</h2>
+        <h2 className="text-primary">Please {register ? 'LogIn' : 'Register'}</h2>
         <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Label>Email address</Form.Label>
@@ -70,13 +89,13 @@ function App() {
             </Form.Control.Feedback>
           </Form.Group>
           <Form.Group className="mb-3" controlId="formBasicCheckbox">
-            <Form.Check type="checkbox" label="Check me out" />
+            <Form.Check onChange={handleRegisterChange} type="checkbox" label="Already registered" />
           </Form.Group>
 
           <p className='text-danger'>{error}</p>
           {/* error message */}
           <Button variant="primary" type="submit">
-            Submit
+            {register ? 'LogIn' : 'Register'}
           </Button>
         </Form>
       </div>
